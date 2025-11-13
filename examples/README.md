@@ -1,208 +1,196 @@
-# Library Tools Examples
+# Examples
 
-This directory contains practical examples demonstrating how to use the library-tools package.
+Practical examples showing how to use the library tools.
 
-## Prerequisites
+## Setup
 
-Before running these examples:
-
-1. **Install the package**:
+1. Install the package:
    ```bash
-   cd /path/to/library-tools
-   poetry install
+   cd library-tools
+   uv venv
+   source .venv/bin/activate
+   uv pip install -e ".[dev]"
    ```
 
-2. **Configure environment**:
+2. Configure credentials in `.env` (copy from `.env.example`)
+
+3. Run an example:
    ```bash
-   cp .env.example .env
-   # Edit .env with your API credentials
+   python examples/basic_search.py
    ```
 
-3. **Activate environment**:
-   ```bash
-   poetry shell
-   ```
+## Available Examples
 
-## Examples
+### basic_search.py
 
-### 1. Basic Search (`basic_search.py`)
+Basic searches with Primo and OpenAlex.
 
-**What it demonstrates:**
-- Simple catalog searches using Primo
-- Finding academic papers with OpenAlex
-- Searching by different fields (title, subject, etc.)
-
-**Run it:**
 ```bash
 python examples/basic_search.py
 ```
 
-**Use this when:**
-- You're new to the package
-- You want to understand basic usage
-- You need simple search examples
+Shows:
+- Searching library catalog
+- Finding academic papers
+- Searching by specific fields
+
+Requires: `PRIMO_API_KEY`, `PRIMO_VID`, `OPENALEX_EMAIL` (optional)
 
 ---
 
-### 2. Multi-Tool Workflow (`multi_tool.py`)
+### worldcat_lookup.py
 
-**What it demonstrates:**
-- Using multiple tools together
-- Complete research workflow for a topic
-- Author-focused research
+WorldCat ISBN lookup, book search, and classification.
 
-**Run it:**
+```bash
+python examples/worldcat_lookup.py
+```
+
+Shows:
+- ISBN and DOI lookups
+- Title/author searches
+- Keyword searches with year and language filters
+- LC and Dewey classification
+- Full bibliographic records
+- Complete workflow example
+
+Requires: `OCLC_CLIENT_ID`, `OCLC_CLIENT_SECRET`
+
+---
+
+### pagination.py
+
+Retrieving multiple pages of results.
+
+```bash
+python examples/pagination.py
+```
+
+Shows:
+- Page-based pagination (OpenAlex)
+- 0-based offset pagination (Repository)
+- 1-based offset pagination (WorldCat)
+
+Requires: Credentials for the services you want to test
+
+---
+
+### multi_tool.py
+
+Using multiple tools together for research workflows.
+
 ```bash
 python examples/multi_tool.py
 ```
 
-**Use this when:**
-- You need comprehensive research workflows
-- You want to combine multiple data sources
-- You're building research assistant features
+Shows:
+- Topic research workflow
+- Author research workflow
+- Combining multiple data sources
 
-**Key features:**
-- Topic research workflow (guides → databases → catalog → papers → repository)
-- Author research workflow (find author → their papers → library holdings)
+Requires: Multiple service credentials
 
 ---
 
-### 3. Agent Integration (`agent_integration.py`)
+### agent_integration.py
 
-**What it demonstrates:**
-- Integration with Claude Agent SDK
-- How Claude uses tools automatically
-- Multi-turn conversations with tool use
+Integration with Claude Agent SDK for conversational search.
 
-**Run it:**
 ```bash
-# Requires ANTHROPIC_API_KEY in environment
-export ANTHROPIC_API_KEY=your_key_here
 python examples/agent_integration.py
 ```
 
-**Use this when:**
-- Building chatbots or agents
-- Implementing conversational interfaces
-- Want Claude to decide which tools to use
-
-**Key features:**
+Shows:
 - Natural language queries
 - Automatic tool selection
-- Complex multi-tool workflows
+- Multi-turn conversations
+
+**With Claude Code installed:** The Claude Agent SDK uses Claude Code's authentication automatically
+
+**Without Claude Code:** Set `ANTHROPIC_API_KEY` environment variable
+
+Also requires: Credentials for library services you want to use
 
 ---
 
-### 4. Direct Client Usage (`direct_client.py`)
+### direct_client.py
 
-**What it demonstrates:**
-- Using API clients directly (not tool wrappers)
-- Accessing full Pydantic models
-- Custom integrations
+Using API clients directly (without tool wrappers).
 
-**Run it:**
 ```bash
 python examples/direct_client.py
 ```
 
-**Use this when:**
-- Building non-LLM applications
-- Need more control over API calls
-- Want to create custom formatters
-- Integrating into existing systems
+Shows:
+- Using clients instead of tools
+- Working with Pydantic models
+- Custom formatting
 
-**Benefits:**
-- Type-safe with Pydantic models
-- Full access to all response data
-- No LLM formatting overhead
-- Easier to test and debug
+Useful for:
+- Non-LLM applications
+- Custom integrations
+- More control over API calls
 
 ---
 
-## Configuration Examples
-
-### Minimal OpenAlex Setup
-```env
-# OpenAlex works without credentials!
-OPENALEX_EMAIL=your.email@institution.edu  # Optional but recommended
-```
-
-### Full Setup
-```env
-# Primo
-PRIMO_API_KEY=your_key
-PRIMO_VID=01YOURSCHOOL:VIEW
-
-# OpenAlex
-OPENALEX_EMAIL=your.email@institution.edu
-
-# LibGuides
-LIBGUIDES_SITE_ID=12345
-LIBGUIDES_CLIENT_ID=your_client_id
-LIBGUIDES_CLIENT_SECRET=your_secret
-
-# Repository
-REPOSITORY_BASE_URL=https://content-out.bepress.com/v2/your-institution.edu
-REPOSITORY_API_KEY=your_key
-
-# Claude (for agent_integration.py)
-ANTHROPIC_API_KEY=your_anthropic_key
-```
-
 ## Quick Start
 
-**Try OpenAlex first** (no credentials needed):
-```bash
-# Just set your email (optional but recommended)
-echo "OPENALEX_EMAIL=your@email.com" > .env
+Try OpenAlex first (no credentials required):
 
-# Run the basic example
+```bash
+echo "OPENALEX_EMAIL=your@email.com" > .env
 python examples/basic_search.py
 ```
 
 ## Common Issues
 
-### "Configuration error: X not configured"
-**Solution:** Configure the required environment variable in your `.env` file.
+**"Configuration error"** - Add required credentials to `.env`
 
-### "Module not found: library_tools"
-**Solution:** Install the package first:
-```bash
-poetry install
-```
+**"Module not found"** - Install the package: `uv pip install -e .`
 
-### "No results found"
-**Solution:**
-- Check your API credentials are correct
-- Try broader search terms
-- Verify you have access to the service
+**"No results"** - Check credentials or try broader search terms
 
-### AsyncIO errors
-**Solution:** Make sure you're using Python 3.10+:
-```bash
-python --version  # Should be 3.10 or higher
-```
+**AsyncIO errors** - Use Python 3.10 or higher
 
 ## Modifying Examples
 
-All examples are simple Python scripts that you can easily modify:
+All examples are simple Python scripts. Modify them by:
+- Changing query strings
+- Adjusting limit parameters
+- Adding filters (year, field, language)
+- Combining tools differently
 
-1. **Change search queries**: Edit the query strings
-2. **Adjust limits**: Change `limit` parameters
-3. **Add filters**: Use additional parameters (year, field, etc.)
-4. **Combine differently**: Mix and match tools for your workflow
+## Configuration Reference
 
-## Next Steps
+Minimal (OpenAlex only):
+```bash
+OPENALEX_EMAIL=your@email.com
+```
 
-After trying these examples:
+Complete:
+```bash
+# Primo
+PRIMO_API_KEY=your_key
+PRIMO_VID=01INST:VIEW
 
-1. Read the [main README](../README.md) for full API documentation
-2. Check the [tests](../tests/) for more usage patterns
-3. Build your own tools using these as templates
-4. Contribute your examples back to the project!
+# OpenAlex
+OPENALEX_EMAIL=your@email.com
 
-## Support
+# WorldCat
+OCLC_CLIENT_ID=your_client_id
+OCLC_CLIENT_SECRET=your_client_secret
 
-- **Issues**: https://github.com/yourusername/library-tools/issues
-- **Documentation**: https://library-tools.readthedocs.io
-- **Discussions**: https://github.com/yourusername/library-tools/discussions
+# LibGuides
+LIBGUIDES_SITE_ID=123
+LIBGUIDES_CLIENT_ID=your_client_id
+LIBGUIDES_CLIENT_SECRET=your_secret
+
+# Repository
+REPOSITORY_BASE_URL=https://content-out.bepress.com/v2/institution.edu
+REPOSITORY_API_KEY=your_key
+
+# Claude (for agent_integration.py, optional if Claude Code is installed)
+# ANTHROPIC_API_KEY=your_key
+```
+
+**Note:** When Claude Code is installed, `ANTHROPIC_API_KEY` is not required - the Claude Agent SDK uses Claude Code's authentication automatically.

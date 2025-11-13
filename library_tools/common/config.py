@@ -51,6 +51,14 @@ class Settings(BaseSettings):
     )
     repository_api_key: Optional[str] = Field(default=None, description="Repository API security token")
 
+    # WorldCat/OCLC settings
+    oclc_client_id: Optional[str] = Field(default=None, description="OCLC API client ID")
+    oclc_client_secret: Optional[str] = Field(default=None, description="OCLC API client secret")
+    oclc_institution_id: Optional[str] = Field(
+        default="CNY",
+        description="OCLC institution symbol (e.g., 'CNY' for CUNY)"
+    )
+
     def validate_primo(self) -> None:
         """Validate that required Primo settings are present."""
         if not self.primo_api_key:
@@ -73,6 +81,13 @@ class Settings(BaseSettings):
             raise ValueError("REPOSITORY_BASE_URL is required for repository tool")
         if not self.repository_api_key:
             raise ValueError("REPOSITORY_API_KEY is required for repository tool")
+
+    def validate_worldcat(self) -> None:
+        """Validate that required WorldCat/OCLC settings are present."""
+        if not self.oclc_client_id:
+            raise ValueError("OCLC_CLIENT_ID is required for WorldCat tool")
+        if not self.oclc_client_secret:
+            raise ValueError("OCLC_CLIENT_SECRET is required for WorldCat tool")
 
 
 @lru_cache()

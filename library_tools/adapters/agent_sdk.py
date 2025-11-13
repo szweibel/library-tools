@@ -310,6 +310,118 @@ async def get_repository_work_details_tool(args: dict[str, Any]) -> dict[str, An
     }
 
 
+# WorldCat Tools
+
+@tool(
+    "lookup_worldcat_isbn",
+    "Look up books in WorldCat to find ISBNs and bibliographic data using DOI, title, author, or ISBN",
+    {
+        "doi": str,
+        "title": str,
+        "author": str,
+        "year": int,
+        "isbn": str,
+    }
+)
+async def lookup_worldcat_isbn_tool(args: dict[str, Any]) -> dict[str, Any]:
+    """Look up book in WorldCat."""
+    from library_tools.worldcat.tools import lookup_worldcat_isbn
+
+    result = await lookup_worldcat_isbn(
+        doi=args.get("doi"),
+        title=args.get("title"),
+        author=args.get("author"),
+        year=args.get("year"),
+        isbn=args.get("isbn"),
+    )
+
+    return {
+        "content": [{
+            "type": "text",
+            "text": result
+        }]
+    }
+
+
+@tool(
+    "search_worldcat_books",
+    "Search WorldCat for books by keyword or subject with optional filters for year and language",
+    {
+        "query": str,
+        "year_from": int,
+        "year_to": int,
+        "language": str,
+        "limit": int,
+        "offset": int,
+    }
+)
+async def search_worldcat_books_tool(args: dict[str, Any]) -> dict[str, Any]:
+    """Search WorldCat for books."""
+    from library_tools.worldcat.tools import search_worldcat_books
+
+    result = await search_worldcat_books(
+        query=args["query"],
+        year_from=args.get("year_from"),
+        year_to=args.get("year_to"),
+        language=args.get("language"),
+        limit=args.get("limit", 25),
+        offset=args.get("offset", 1),
+    )
+
+    return {
+        "content": [{
+            "type": "text",
+            "text": result
+        }]
+    }
+
+
+@tool(
+    "get_worldcat_classification",
+    "Get Library of Congress and Dewey Decimal classification for a book using its OCLC number",
+    {
+        "oclc_number": str,
+    }
+)
+async def get_worldcat_classification_tool(args: dict[str, Any]) -> dict[str, Any]:
+    """Get classification for a WorldCat book."""
+    from library_tools.worldcat.tools import get_worldcat_classification
+
+    result = await get_worldcat_classification(
+        oclc_number=args["oclc_number"],
+    )
+
+    return {
+        "content": [{
+            "type": "text",
+            "text": result
+        }]
+    }
+
+
+@tool(
+    "get_worldcat_full_record",
+    "Get complete bibliographic record with subjects, genres, and classification using OCLC number",
+    {
+        "oclc_number": str,
+    }
+)
+async def get_worldcat_full_record_tool(args: dict[str, Any]) -> dict[str, Any]:
+    """Get full bibliographic record from WorldCat."""
+    from library_tools.worldcat.tools import get_worldcat_full_record
+
+    result = await get_worldcat_full_record(
+        oclc_number=args["oclc_number"],
+    )
+
+    return {
+        "content": [{
+            "type": "text",
+            "text": result
+        }]
+    }
+
+
 # Export all tools
 __all__ = [
     "search_primo_tool",
@@ -322,4 +434,8 @@ __all__ = [
     "search_repository_tool",
     "get_latest_repository_works_tool",
     "get_repository_work_details_tool",
+    "lookup_worldcat_isbn_tool",
+    "search_worldcat_books_tool",
+    "get_worldcat_classification_tool",
+    "get_worldcat_full_record_tool",
 ]

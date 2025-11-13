@@ -68,14 +68,19 @@ def run_agent_query(client: Anthropic, query: str, tools: list):
 
 def main():
     """Run agent integration examples."""
-    # Check for API key
+    # Initialize Anthropic client
+    # When Claude Code is installed, the Claude Agent SDK uses Claude Code's authentication automatically
+    # Without Claude Code, set ANTHROPIC_API_KEY environment variable
     api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("❌ Error: ANTHROPIC_API_KEY not found in environment")
-        print("   Please set your Anthropic API key to run this example.")
-        return
 
-    client = Anthropic(api_key=api_key)
+    try:
+        client = Anthropic(api_key=api_key) if api_key else Anthropic()
+    except Exception as e:
+        print("❌ Error initializing Anthropic client")
+        print("   With Claude Code: Authentication should work automatically")
+        print("   Without Claude Code: Set ANTHROPIC_API_KEY environment variable")
+        print(f"   Error: {e}")
+        return
 
     # Define available tools
     tools = [
