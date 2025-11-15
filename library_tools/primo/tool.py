@@ -57,7 +57,7 @@ def _format_results_for_llm(results) -> str:
 
         # Add availability on next line if known
         if doc.is_available:
-            lines.append(f"   ✓ Available")
+            lines.append("   ✓ Available")
         elif doc.availability_status:
             lines.append(f"   Status: {doc.availability_status}")
 
@@ -116,7 +116,7 @@ async def search_primo(
             operator=operator,
             limit=limit,
             start=start,
-            journals_only=journals_only
+            journals_only=journals_only,
         )
 
         return _format_results_for_llm(results)

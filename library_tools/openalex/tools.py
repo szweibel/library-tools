@@ -160,7 +160,7 @@ async def search_works(
             limit=limit,
             page=page,
             year_from=year_from,
-            open_access_only=open_access_only
+            open_access_only=open_access_only,
         )
 
         return _format_works_for_llm(works, query)
@@ -203,10 +203,7 @@ async def search_authors(
     try:
         client = OpenAlexClient()
         authors = await client.search_authors(
-            name=name,
-            institution_id=institution_id,
-            limit=limit,
-            page=page
+            name=name, institution_id=institution_id, limit=limit, page=page
         )
 
         return _format_authors_for_llm(authors, name)
@@ -248,11 +245,7 @@ async def get_author_works(
     """
     try:
         client = OpenAlexClient()
-        works = await client.get_author_works(
-            author_id=author_id,
-            limit=limit,
-            page=page
-        )
+        works = await client.get_author_works(author_id=author_id, limit=limit, page=page)
 
         return _format_works_for_llm(works, f"author {author_id}")
 
@@ -291,11 +284,7 @@ async def search_journals(
     """
     try:
         client = OpenAlexClient()
-        journals = await client.search_journals(
-            name=name,
-            limit=limit,
-            page=page
-        )
+        journals = await client.search_journals(name=name, limit=limit, page=page)
 
         return _format_journals_for_llm(journals, name)
 

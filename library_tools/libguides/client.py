@@ -87,23 +87,25 @@ class LibGuidesClient:
         self.site_id = site_id or settings.libguides_site_id
         self.client_id = client_id or settings.libguides_client_id
         self.client_secret = client_secret or settings.libguides_client_secret
-        self.base_url = base_url or settings.libguides_base_url or "https://lgapi-us.libapps.com/1.2"
+        self.base_url = (
+            base_url or settings.libguides_base_url or "https://lgapi-us.libapps.com/1.2"
+        )
 
         # Validate required settings
         if not self.site_id:
             raise ConfigurationError(
                 "LIBGUIDES_SITE_ID not configured",
-                "LibGuides site ID is required. Please set LIBGUIDES_SITE_ID in your environment."
+                "LibGuides site ID is required. Please set LIBGUIDES_SITE_ID in your environment.",
             )
         if not self.client_id:
             raise ConfigurationError(
                 "LIBGUIDES_CLIENT_ID not configured",
-                "LibGuides client ID is required. Please set LIBGUIDES_CLIENT_ID in your environment."
+                "LibGuides client ID is required. Please set LIBGUIDES_CLIENT_ID in your environment.",
             )
         if not self.client_secret:
             raise ConfigurationError(
                 "LIBGUIDES_CLIENT_SECRET not configured",
-                "LibGuides client secret is required. Please set LIBGUIDES_CLIENT_SECRET in your environment."
+                "LibGuides client secret is required. Please set LIBGUIDES_CLIENT_SECRET in your environment.",
             )
 
         # Token cache
@@ -145,12 +147,12 @@ class LibGuidesClient:
                 raise APIError(
                     f"LibGuides OAuth failed: {e.response.status_code}",
                     user_message="Could not authenticate with LibGuides. Please check configuration.",
-                    status_code=e.response.status_code
+                    status_code=e.response.status_code,
                 )
             except Exception as e:
                 raise APIError(
                     f"LibGuides OAuth error: {str(e)}",
-                    user_message="Authentication error with LibGuides."
+                    user_message="Authentication error with LibGuides.",
                 )
 
     async def search_databases(
@@ -212,7 +214,8 @@ class LibGuidesClient:
                 if search:
                     search_lower = search.lower()
                     databases = [
-                        db for db in databases
+                        db
+                        for db in databases
                         if (
                             search_lower in db.name.lower()
                             or (db.description and search_lower in db.description.lower())
@@ -223,21 +226,18 @@ class LibGuidesClient:
                 # Apply limit
                 databases = databases[:limit]
 
-                return LibGuidesDatabaseSearchResult(
-                    databases=databases,
-                    total=len(databases)
-                )
+                return LibGuidesDatabaseSearchResult(databases=databases, total=len(databases))
 
             except httpx.HTTPStatusError as e:
                 raise APIError(
                     f"LibGuides database search failed: {e.response.status_code}",
                     user_message="Could not search databases. Please try again.",
-                    status_code=e.response.status_code
+                    status_code=e.response.status_code,
                 )
             except Exception as e:
                 raise APIError(
                     f"Database search error: {str(e)}",
-                    user_message="An error occurred while searching databases."
+                    user_message="An error occurred while searching databases.",
                 )
 
     async def search_guides(
@@ -304,21 +304,18 @@ class LibGuidesClient:
                     if guide:
                         guides.append(guide)
 
-                return LibGuidesGuideSearchResult(
-                    guides=guides,
-                    total=len(guides)
-                )
+                return LibGuidesGuideSearchResult(guides=guides, total=len(guides))
 
             except httpx.HTTPStatusError as e:
                 raise APIError(
                     f"LibGuides search failed: {e.response.status_code}",
                     user_message="Could not search guides. Please try again.",
-                    status_code=e.response.status_code
+                    status_code=e.response.status_code,
                 )
             except Exception as e:
                 raise APIError(
                     f"Guide search error: {str(e)}",
-                    user_message="An error occurred while searching guides."
+                    user_message="An error occurred while searching guides.",
                 )
 
     def _parse_database(self, data: Dict[str, Any]) -> Optional[LibGuidesDatabase]:

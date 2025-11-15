@@ -113,11 +113,7 @@ async def search_repository(
     try:
         client = RepositoryClient()
         result = await client.search(
-            query=query,
-            collection=collection,
-            year=year,
-            limit=limit,
-            start=start
+            query=query, collection=collection, year=year, limit=limit, start=start
         )
 
         return _format_works_for_llm(result, detailed=False)
@@ -156,11 +152,7 @@ async def get_latest_repository_works(
     """
     try:
         client = RepositoryClient()
-        result = await client.get_latest_works(
-            collection=collection,
-            limit=limit,
-            start=start
-        )
+        result = await client.get_latest_works(collection=collection, limit=limit, start=start)
 
         return _format_works_for_llm(result, detailed=False)
 
@@ -199,11 +191,8 @@ async def get_repository_work_details(
 
         # Create a single-work result for formatting
         from library_tools.repository.client import RepositorySearchResult
-        result = RepositorySearchResult(
-            works=[work],
-            total=1,
-            query=None
-        )
+
+        result = RepositorySearchResult(works=[work], total=1, query=None)
 
         return _format_works_for_llm(result, detailed=True)
 

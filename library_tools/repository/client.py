@@ -57,19 +57,19 @@ class RepositoryClient:
         """
         settings = get_settings()
 
-        self.base_url = base_url or settings.repository_base_url
-        self.api_key = api_key or settings.repository_api_key
+        self.base_url: str = base_url or settings.repository_base_url or ""
+        self.api_key: str = api_key or settings.repository_api_key or ""
 
         # Validate required settings
         if not self.base_url:
             raise ConfigurationError(
                 "REPOSITORY_BASE_URL not configured",
-                "Repository base URL is required. Please set REPOSITORY_BASE_URL in your environment."
+                "Repository base URL is required. Please set REPOSITORY_BASE_URL in your environment.",
             )
         if not self.api_key:
             raise ConfigurationError(
                 "REPOSITORY_API_KEY not configured",
-                "Repository API key is required. Please set REPOSITORY_API_KEY in your environment."
+                "Repository API key is required. Please set REPOSITORY_API_KEY in your environment.",
             )
 
     async def search(
@@ -137,27 +137,23 @@ class RepositoryClient:
 
                 total = data.get("query_meta", {}).get("total_hits", 0)
 
-                return RepositorySearchResult(
-                    works=works,
-                    total=total,
-                    query=query
-                )
+                return RepositorySearchResult(works=works, total=total, query=query)
 
             except httpx.HTTPStatusError as e:
                 raise APIError(
                     f"Repository search failed: {e.response.status_code}",
                     user_message="Could not search repository. Please try again.",
-                    status_code=e.response.status_code
+                    status_code=e.response.status_code,
                 )
             except httpx.RequestError as e:
                 raise APIError(
                     f"Network error contacting repository: {str(e)}",
-                    user_message="Could not connect to repository. Please try again."
+                    user_message="Could not connect to repository. Please try again.",
                 )
             except Exception as e:
                 raise APIError(
                     f"Repository error: {str(e)}",
-                    user_message="An error occurred while searching the repository."
+                    user_message="An error occurred while searching the repository.",
                 )
 
     async def get_latest_works(
@@ -230,12 +226,12 @@ class RepositoryClient:
                 raise APIError(
                     f"Repository get details failed: {e.response.status_code}",
                     user_message="Could not retrieve work details.",
-                    status_code=e.response.status_code
+                    status_code=e.response.status_code,
                 )
             except Exception as e:
                 raise APIError(
                     f"Repository error: {str(e)}",
-                    user_message="An error occurred while retrieving work details."
+                    user_message="An error occurred while retrieving work details.",
                 )
 
     def _parse_work(self, data: Dict[str, Any], detailed: bool = False) -> Optional[RepositoryWork]:
@@ -284,7 +280,8 @@ class RepositoryClient:
                 if abstract:
                     # Strip HTML tags
                     import re
-                    abstract = re.sub('<[^<]+?>', '', abstract).strip()
+
+                    abstract = re.sub("<[^<]+?>", "", abstract).strip()
 
             # Advisor
             advisor = data.get("advisor") or data.get("committee_member")

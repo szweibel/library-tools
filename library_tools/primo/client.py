@@ -67,12 +67,12 @@ class PrimoClient:
         if not self.api_key:
             raise ConfigurationError(
                 "PRIMO_API_KEY not configured",
-                "Primo API key is required. Please set PRIMO_API_KEY in your environment."
+                "Primo API key is required. Please set PRIMO_API_KEY in your environment.",
             )
         if not self.vid:
             raise ConfigurationError(
                 "PRIMO_VID not configured",
-                "Primo view ID is required. Please set PRIMO_VID in your environment."
+                "Primo view ID is required. Please set PRIMO_VID in your environment.",
             )
 
     async def search(
@@ -139,26 +139,21 @@ class PrimoClient:
 
                 total = data.get("info", {}).get("total", 0)
 
-                return PrimoSearchResult(
-                    total=total,
-                    documents=documents,
-                    query=query
-                )
+                return PrimoSearchResult(total=total, documents=documents, query=query)
 
             except httpx.HTTPStatusError as e:
                 raise APIError(
-                    f"Primo API error: {e.response.status_code}",
-                    status_code=e.response.status_code
+                    f"Primo API error: {e.response.status_code}", status_code=e.response.status_code
                 )
             except httpx.RequestError as e:
                 raise APIError(
                     f"Network error contacting Primo: {str(e)}",
-                    user_message="Could not connect to the library catalog. Please try again."
+                    user_message="Could not connect to the library catalog. Please try again.",
                 )
             except Exception as e:
                 raise APIError(
                     f"Unexpected error: {str(e)}",
-                    user_message="An error occurred while searching. Please try again."
+                    user_message="An error occurred while searching. Please try again.",
                 )
 
     def _parse_document(self, doc_data: dict) -> Optional[PrimoDocument]:
@@ -220,6 +215,6 @@ class PrimoClient:
                 is_available=is_available,
             )
 
-        except Exception as e:
+        except Exception:
             # Skip malformed documents
             return None

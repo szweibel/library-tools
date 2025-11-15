@@ -134,9 +134,7 @@ class WorldCatClient:
 
                 # Strategy 2: Search by DOI
                 if doi:
-                    doi_clean = doi.replace("https://doi.org/", "").replace(
-                        "http://doi.org/", ""
-                    )
+                    doi_clean = doi.replace("https://doi.org/", "").replace("http://doi.org/", "")
                     doi_escaped = doi_clean.replace("/", "\\/")
                     query = f"bn:{doi_escaped}"
 
@@ -149,9 +147,7 @@ class WorldCatClient:
                             oclc_num = brief_record.get("oclcNumber")
 
                             # Get full record with ISBNs
-                            holdings_response = session.summary_holdings_search(
-                                oclcNumber=oclc_num
-                            )
+                            holdings_response = session.summary_holdings_search(oclcNumber=oclc_num)
                             if holdings_response.status_code == 200:
                                 holdings_data = holdings_response.json()
                                 if holdings_data.get("numberOfRecords", 0) > 0:
@@ -183,9 +179,7 @@ class WorldCatClient:
                             oclc_num = brief_record.get("oclcNumber")
 
                             # Get full record with ISBNs
-                            holdings_response = session.summary_holdings_search(
-                                oclcNumber=oclc_num
-                            )
+                            holdings_response = session.summary_holdings_search(oclcNumber=oclc_num)
                             if holdings_response.status_code == 200:
                                 holdings_data = holdings_response.json()
                                 if holdings_data.get("numberOfRecords", 0) > 0:
@@ -248,7 +242,7 @@ class WorldCatClient:
 
                 if response.status_code != 200:
                     raise APIError(
-                        f"WorldCat search failed",
+                        "WorldCat search failed",
                         status_code=response.status_code,
                     )
 
@@ -266,9 +260,7 @@ class WorldCatClient:
                     oclc_num = brief_record.get("oclcNumber")
 
                     # Get full record with ISBNs
-                    holdings_response = session.summary_holdings_search(
-                        oclcNumber=oclc_num
-                    )
+                    holdings_response = session.summary_holdings_search(oclcNumber=oclc_num)
 
                     if holdings_response.status_code == 200:
                         holdings_data = holdings_response.json()
@@ -284,7 +276,12 @@ class WorldCatClient:
                                 if inst_check.status_code == 200:
                                     inst_data = inst_check.json()
                                     held_by_us = inst_data.get("numberOfRecords", 0) > 0
-                            except:
+                            except (
+                                requests.RequestException,
+                                ValueError,
+                                KeyError,
+                                AttributeError,
+                            ):
                                 pass
 
                             book = self._parse_book(full_record)
@@ -313,7 +310,7 @@ class WorldCatClient:
 
                 if response.status_code != 200:
                     raise APIError(
-                        f"Classification lookup failed",
+                        "Classification lookup failed",
                         status_code=response.status_code,
                     )
 
@@ -358,7 +355,7 @@ class WorldCatClient:
 
                 if response.status_code != 200:
                     raise APIError(
-                        f"Full bib lookup failed",
+                        "Full bib lookup failed",
                         status_code=response.status_code,
                     )
 

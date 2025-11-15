@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     primo_api_key: Optional[str] = Field(default=None, description="Ex Libris Primo API key")
     primo_base_url: str = Field(
         default="https://api-na.hosted.exlibrisgroup.com/primo/v1/search",
-        description="Primo API base URL"
+        description="Primo API base URL",
     )
     primo_vid: Optional[str] = Field(default=None, description="Primo view ID (e.g., 01INST:VIEW)")
     primo_scope: Optional[str] = Field(default=None, description="Primo search scope")
@@ -32,31 +32,36 @@ class Settings(BaseSettings):
     # OpenAlex settings
     openalex_email: Optional[str] = Field(
         default=None,
-        description="Email for OpenAlex polite pool (recommended for better rate limits)"
+        description="Email for OpenAlex polite pool (recommended for better rate limits)",
     )
 
     # LibGuides settings
     libguides_site_id: Optional[str] = Field(default=None, description="LibGuides site ID")
-    libguides_client_id: Optional[str] = Field(default=None, description="LibGuides OAuth client ID")
-    libguides_client_secret: Optional[str] = Field(default=None, description="LibGuides OAuth client secret")
+    libguides_client_id: Optional[str] = Field(
+        default=None, description="LibGuides OAuth client ID"
+    )
+    libguides_client_secret: Optional[str] = Field(
+        default=None, description="LibGuides OAuth client secret"
+    )
     libguides_base_url: Optional[str] = Field(
         default=None,
-        description="LibGuides API base URL (default: https://lgapi-us.libapps.com/1.2)"
+        description="LibGuides API base URL (default: https://lgapi-us.libapps.com/1.2)",
     )
 
     # Repository settings (bePress/Digital Commons)
     repository_base_url: Optional[str] = Field(
         default=None,
-        description="Repository API base URL (e.g., https://content-out.bepress.com/v2/institution.edu)"
+        description="Repository API base URL (e.g., https://content-out.bepress.com/v2/institution.edu)",
     )
-    repository_api_key: Optional[str] = Field(default=None, description="Repository API security token")
+    repository_api_key: Optional[str] = Field(
+        default=None, description="Repository API security token"
+    )
 
     # WorldCat/OCLC settings
     oclc_client_id: Optional[str] = Field(default=None, description="OCLC API client ID")
     oclc_client_secret: Optional[str] = Field(default=None, description="OCLC API client secret")
     oclc_institution_id: Optional[str] = Field(
-        default="CNY",
-        description="OCLC institution symbol (e.g., 'CNY' for CUNY)"
+        default="CNY", description="OCLC institution symbol (e.g., 'CNY' for CUNY)"
     )
 
     def validate_primo(self) -> None:
