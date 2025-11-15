@@ -1,7 +1,7 @@
 """OpenAlex API client - pure API logic with no LLM dependencies."""
 
 import pyalex
-from pyalex import Works, Authors, Sources, Institutions
+from pyalex import Works, Authors, Sources
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
@@ -128,9 +128,7 @@ class OpenAlexClient:
             authors_query = Authors().search_filter(display_name=name)
 
             if institution_id:
-                authors_query = authors_query.filter(
-                    last_known_institutions={"id": institution_id}
-                )
+                authors_query = authors_query.filter(last_known_institutions={"id": institution_id})
 
             # Use paginate to support pagination
             results = []
@@ -281,5 +279,5 @@ class OpenAlexClient:
 
             words_with_positions.sort(key=lambda x: x[1])
             return " ".join([word for word, pos in words_with_positions])
-        except:
+        except (AttributeError, TypeError, KeyError, ValueError):
             return None

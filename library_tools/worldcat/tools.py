@@ -143,7 +143,7 @@ async def lookup_worldcat_isbn(
             query_str = ", ".join(query_parts)
             return f"No book found in WorldCat for {query_str}. Try different search terms or verify the information."
 
-        query_info = f"Query: "
+        query_info = "Query: "
         if isbn:
             query_info += f"ISBN {isbn}"
         elif doi:

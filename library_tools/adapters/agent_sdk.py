@@ -24,6 +24,7 @@ from claude_agent_sdk import tool
 
 # Primo Tools
 
+
 @tool(
     "search_primo",
     "Search a library catalog using Ex Libris Primo to find books, journals, articles, and other resources",
@@ -34,7 +35,7 @@ from claude_agent_sdk import tool
         "limit": int,
         "start": int,
         "journals_only": bool,
-    }
+    },
 )
 async def search_primo_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Search Primo catalog."""
@@ -49,15 +50,11 @@ async def search_primo_tool(args: dict[str, Any]) -> dict[str, Any]:
         journals_only=args.get("journals_only", False),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 # OpenAlex Tools
+
 
 @tool(
     "search_works",
@@ -68,7 +65,7 @@ async def search_primo_tool(args: dict[str, Any]) -> dict[str, Any]:
         "page": int,
         "year_from": int,
         "open_access_only": bool,
-    }
+    },
 )
 async def search_works_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Search OpenAlex for academic works."""
@@ -82,12 +79,7 @@ async def search_works_tool(args: dict[str, Any]) -> dict[str, Any]:
         open_access_only=args.get("open_access_only", False),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 @tool(
@@ -98,7 +90,7 @@ async def search_works_tool(args: dict[str, Any]) -> dict[str, Any]:
         "institution_id": str,
         "limit": int,
         "page": int,
-    }
+    },
 )
 async def search_authors_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Search OpenAlex for authors."""
@@ -111,12 +103,7 @@ async def search_authors_tool(args: dict[str, Any]) -> dict[str, Any]:
         page=args.get("page", 1),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 @tool(
@@ -126,7 +113,7 @@ async def search_authors_tool(args: dict[str, Any]) -> dict[str, Any]:
         "author_id": str,
         "limit": int,
         "page": int,
-    }
+    },
 )
 async def get_author_works_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Get works by a specific author."""
@@ -138,12 +125,7 @@ async def get_author_works_tool(args: dict[str, Any]) -> dict[str, Any]:
         page=args.get("page", 1),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 @tool(
@@ -153,7 +135,7 @@ async def get_author_works_tool(args: dict[str, Any]) -> dict[str, Any]:
         "name": str,
         "limit": int,
         "page": int,
-    }
+    },
 )
 async def search_journals_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Search OpenAlex for journals."""
@@ -165,15 +147,11 @@ async def search_journals_tool(args: dict[str, Any]) -> dict[str, Any]:
         page=args.get("page", 1),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 # LibGuides Tools
+
 
 @tool(
     "search_databases",
@@ -181,7 +159,7 @@ async def search_journals_tool(args: dict[str, Any]) -> dict[str, Any]:
     {
         "search": str,
         "limit": int,
-    }
+    },
 )
 async def search_databases_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Search LibGuides databases."""
@@ -192,12 +170,7 @@ async def search_databases_tool(args: dict[str, Any]) -> dict[str, Any]:
         limit=args.get("limit", 20),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 @tool(
@@ -207,7 +180,7 @@ async def search_databases_tool(args: dict[str, Any]) -> dict[str, Any]:
         "search": str,
         "guide_id": int,
         "limit": int,
-    }
+    },
 )
 async def search_guides_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Search LibGuides for research guides."""
@@ -219,15 +192,11 @@ async def search_guides_tool(args: dict[str, Any]) -> dict[str, Any]:
         limit=args.get("limit", 10),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 # Repository Tools
+
 
 @tool(
     "search_repository",
@@ -238,7 +207,7 @@ async def search_guides_tool(args: dict[str, Any]) -> dict[str, Any]:
         "year": str,
         "limit": int,
         "start": int,
-    }
+    },
 )
 async def search_repository_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Search institutional repository."""
@@ -252,12 +221,7 @@ async def search_repository_tool(args: dict[str, Any]) -> dict[str, Any]:
         start=args.get("start", 0),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 @tool(
@@ -267,7 +231,7 @@ async def search_repository_tool(args: dict[str, Any]) -> dict[str, Any]:
         "collection": str,
         "limit": int,
         "start": int,
-    }
+    },
 )
 async def get_latest_repository_works_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Get latest works from repository."""
@@ -279,12 +243,7 @@ async def get_latest_repository_works_tool(args: dict[str, Any]) -> dict[str, An
         start=args.get("start", 0),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 @tool(
@@ -292,7 +251,7 @@ async def get_latest_repository_works_tool(args: dict[str, Any]) -> dict[str, An
     "Get detailed information about a specific work in the repository using its URL",
     {
         "item_url": str,
-    }
+    },
 )
 async def get_repository_work_details_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Get details for a specific repository work."""
@@ -302,15 +261,11 @@ async def get_repository_work_details_tool(args: dict[str, Any]) -> dict[str, An
         item_url=args["item_url"],
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 # WorldCat Tools
+
 
 @tool(
     "lookup_worldcat_isbn",
@@ -321,7 +276,7 @@ async def get_repository_work_details_tool(args: dict[str, Any]) -> dict[str, An
         "author": str,
         "year": int,
         "isbn": str,
-    }
+    },
 )
 async def lookup_worldcat_isbn_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Look up book in WorldCat."""
@@ -335,12 +290,7 @@ async def lookup_worldcat_isbn_tool(args: dict[str, Any]) -> dict[str, Any]:
         isbn=args.get("isbn"),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 @tool(
@@ -353,7 +303,7 @@ async def lookup_worldcat_isbn_tool(args: dict[str, Any]) -> dict[str, Any]:
         "language": str,
         "limit": int,
         "offset": int,
-    }
+    },
 )
 async def search_worldcat_books_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Search WorldCat for books."""
@@ -368,12 +318,7 @@ async def search_worldcat_books_tool(args: dict[str, Any]) -> dict[str, Any]:
         offset=args.get("offset", 1),
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 @tool(
@@ -381,7 +326,7 @@ async def search_worldcat_books_tool(args: dict[str, Any]) -> dict[str, Any]:
     "Get Library of Congress and Dewey Decimal classification for a book using its OCLC number",
     {
         "oclc_number": str,
-    }
+    },
 )
 async def get_worldcat_classification_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Get classification for a WorldCat book."""
@@ -391,12 +336,7 @@ async def get_worldcat_classification_tool(args: dict[str, Any]) -> dict[str, An
         oclc_number=args["oclc_number"],
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 @tool(
@@ -404,7 +344,7 @@ async def get_worldcat_classification_tool(args: dict[str, Any]) -> dict[str, An
     "Get complete bibliographic record with subjects, genres, and classification using OCLC number",
     {
         "oclc_number": str,
-    }
+    },
 )
 async def get_worldcat_full_record_tool(args: dict[str, Any]) -> dict[str, Any]:
     """Get full bibliographic record from WorldCat."""
@@ -414,12 +354,7 @@ async def get_worldcat_full_record_tool(args: dict[str, Any]) -> dict[str, Any]:
         oclc_number=args["oclc_number"],
     )
 
-    return {
-        "content": [{
-            "type": "text",
-            "text": result
-        }]
-    }
+    return {"content": [{"type": "text", "text": result}]}
 
 
 # Export all tools

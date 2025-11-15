@@ -29,10 +29,7 @@ class APIError(LibraryToolsError):
     """Error communicating with an external API."""
 
     def __init__(
-        self,
-        message: str,
-        status_code: Optional[int] = None,
-        user_message: Optional[str] = None
+        self, message: str, status_code: Optional[int] = None, user_message: Optional[str] = None
     ):
         """Initialize API error.
 

@@ -12,9 +12,9 @@ def _strip_html(text: str) -> str:
     if not text:
         return text
     # Remove HTML tags
-    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r"<[^>]+>", "", text)
     # Clean up extra whitespace
-    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
@@ -144,10 +144,7 @@ async def search_databases(
     """
     try:
         client = LibGuidesClient()
-        result = await client.search_databases(
-            search=search,
-            limit=limit
-        )
+        result = await client.search_databases(search=search, limit=limit)
 
         return _format_databases_for_llm(result, search)
 
@@ -186,10 +183,7 @@ async def search_guides(
     try:
         client = LibGuidesClient()
         result = await client.search_guides(
-            search=search,
-            guide_id=guide_id,
-            limit=limit,
-            expand_pages=True
+            search=search, guide_id=guide_id, limit=limit, expand_pages=True
         )
 
         return _format_guides_for_llm(result, search)
