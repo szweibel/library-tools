@@ -320,7 +320,12 @@ async def get_repository_work_details_tool(args: dict[str, Any]) -> dict[str, An
         "title": str,
         "author": str,
         "year": int,
+        "year_from": int,
+        "year_to": int,
         "isbn": str,
+        "fetch_holdings": bool,
+        "holdings_limit": int,
+        "check_institutions": list,
     }
 )
 async def lookup_worldcat_isbn_tool(args: dict[str, Any]) -> dict[str, Any]:
@@ -332,7 +337,12 @@ async def lookup_worldcat_isbn_tool(args: dict[str, Any]) -> dict[str, Any]:
         title=args.get("title"),
         author=args.get("author"),
         year=args.get("year"),
+        year_from=args.get("year_from"),
+        year_to=args.get("year_to"),
         isbn=args.get("isbn"),
+        fetch_holdings=args.get("fetch_holdings", False),
+        holdings_limit=args.get("holdings_limit"),
+        check_institutions=args.get("check_institutions"),
     )
 
     return {
@@ -353,6 +363,9 @@ async def lookup_worldcat_isbn_tool(args: dict[str, Any]) -> dict[str, Any]:
         "language": str,
         "limit": int,
         "offset": int,
+        "fetch_holdings": bool,
+        "holdings_limit": int,
+        "check_institutions": list,
     }
 )
 async def search_worldcat_books_tool(args: dict[str, Any]) -> dict[str, Any]:
@@ -366,6 +379,9 @@ async def search_worldcat_books_tool(args: dict[str, Any]) -> dict[str, Any]:
         language=args.get("language"),
         limit=args.get("limit", 25),
         offset=args.get("offset", 1),
+        fetch_holdings=args.get("fetch_holdings", False),
+        holdings_limit=args.get("holdings_limit"),
+        check_institutions=args.get("check_institutions"),
     )
 
     return {
