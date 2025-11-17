@@ -12,15 +12,22 @@ Python tools for searching library catalogs, academic databases, and institution
 
 ## Installation
 
-```bash
-# Using UV (recommended)
-uv pip install library-tools
+**Note:** This package is not yet published to PyPI. Install from source:
 
-# Using pip
-pip install library-tools
+```bash
+# Install from local source
+git clone https://github.com/szweibel/library-tools
+cd library-tools
+uv pip install -e .
+
+# With development dependencies
+uv pip install -e ".[dev]"
 
 # With Claude Agent SDK adapter
-uv pip install library-tools[agent-sdk]
+uv pip install -e ".[agent-sdk]"
+
+# Or install directly from GitHub
+pip install git+https://github.com/szweibel/library-tools.git
 ```
 
 ## Setup
