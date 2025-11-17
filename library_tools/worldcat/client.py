@@ -22,12 +22,20 @@ class WorldCatBook(BaseModel):
     oclc_number: str
     title: str
     creator: Optional[str] = None
+    contributors: List[str] = Field(default_factory=list)
     date: Optional[str] = None
+    machine_readable_date: Optional[str] = None
     publisher: Optional[str] = None
+    publication_place: Optional[str] = None
+    edition: Optional[str] = None
+    series: Optional[str] = None
     language: Optional[str] = None
     format: Optional[str] = None
+    specific_format: Optional[str] = None
     isbns: List[str] = Field(default_factory=list)
-    held_by_institution: bool = False
+    holding_institutions: List[str] = Field(default_factory=list)
+    total_holdings: Optional[int] = None
+    merged_oclc_numbers: List[str] = Field(default_factory=list)
 
 
 class WorldCatClassification(BaseModel):
@@ -45,6 +53,11 @@ class WorldCatFullBib(BaseModel):
 
     oclc_number: str
     title: Optional[str] = None
+    creator: Optional[str] = None
+    contributors: List[Dict[str, str]] = Field(default_factory=list)
+    isbns: List[str] = Field(default_factory=list)
+    edition: Optional[str] = None
+    series: Optional[str] = None
     language: Optional[str] = None
     lc_classification: Optional[str] = None
     dewey_classification: Optional[str] = None
@@ -57,6 +70,8 @@ class WorldCatFullBib(BaseModel):
     publication_place: Optional[str] = None
     publication_date: Optional[str] = None
     publication_year: Optional[str] = None
+    holding_institutions: List[str] = Field(default_factory=list)
+    total_holdings: Optional[int] = None
 
 
 class WorldCatClient:
@@ -90,10 +105,14 @@ class WorldCatClient:
                 "OCLC credentials not found. Set OCLC_CLIENT_ID and OCLC_CLIENT_SECRET"
             )
 
-    def _get_session(self) -> MetadataSession:
-        """Create an authenticated WorldCat session."""
+    def _get_session(self, scopes: str = "WorldCatMetadataAPI") -> MetadataSession:
+        """Create an authenticated WorldCat session.
+
+        Args:
+            scopes: OAuth scopes to request. Default is "WorldCatMetadataAPI"
+        """
         token = WorldcatAccessToken(
-            key=self.client_id, secret=self.client_secret, scopes="WorldCatMetadataAPI"
+            key=self.client_id, secret=self.client_secret, scopes=scopes
         )
         return MetadataSession(authorization=token)
 
@@ -103,7 +122,11 @@ class WorldCatClient:
         title: Optional[str] = None,
         author: Optional[str] = None,
         year: Optional[int] = None,
+        year_from: Optional[int] = None,
+        year_to: Optional[int] = None,
         isbn: Optional[str] = None,
+        fetch_holdings: bool = False,
+        holdings_limit: Optional[int] = None,
     ) -> Optional[WorldCatBook]:
         """Look up a book in WorldCat and return bibliographic data.
 
@@ -111,8 +134,12 @@ class WorldCatClient:
             doi: DOI of the book
             title: Book title
             author: Author name
-            year: Publication year
+            year: Publication year (exact match)
+            year_from: Filter by start year
+            year_to: Filter by end year
             isbn: ISBN to verify/enrich
+            fetch_holdings: If True, fetch complete holdings data (slower, makes additional API call)
+            holdings_limit: Maximum number of holding institutions to fetch. None = fetch all.
 
         Returns:
             WorldCatBook object or None if not found
@@ -130,7 +157,10 @@ class WorldCatClient:
                         data = response.json()
                         if data.get("numberOfRecords", 0) > 0:
                             record = data["briefRecords"][0]
-                            return self._parse_book(record)
+                            book = self._parse_book(record)
+                            if fetch_holdings:
+                                book = await self._populate_holdings(book, limit=holdings_limit)
+                            return book
 
                 # Strategy 2: Search by DOI
                 if doi:
@@ -156,7 +186,10 @@ class WorldCatClient:
                                 holdings_data = holdings_response.json()
                                 if holdings_data.get("numberOfRecords", 0) > 0:
                                     record = holdings_data["briefRecords"][0]
-                                    return self._parse_book(record)
+                                    book = self._parse_book(record)
+                                    if fetch_holdings:
+                                        book = await self._populate_holdings(book)
+                                    return book
 
                 # Strategy 3: Search by title and author
                 if title:
@@ -169,12 +202,23 @@ class WorldCatClient:
                         author_clean = author.replace('"', "")
                         query_parts.append(f'au:"{author_clean}"')
 
+                    # Handle year filtering
+                    search_params = {"itemType": "book"}
                     if year:
+                        # Exact year match
                         query_parts.append(f"yr:{year}")
+                    elif year_from or year_to:
+                        # Year range using datePublished parameter
+                        if year_from and year_to:
+                            search_params["datePublished"] = f"{year_from}-{year_to}"
+                        elif year_from:
+                            search_params["datePublished"] = f"{year_from}-"
+                        elif year_to:
+                            search_params["datePublished"] = f"-{year_to}"
 
                     query = " AND ".join(query_parts)
 
-                    response = session.brief_bibs_search(q=query, itemType="book")
+                    response = session.brief_bibs_search(q=query, **search_params)
 
                     if response.status_code == 200:
                         data = response.json()
@@ -190,7 +234,10 @@ class WorldCatClient:
                                 holdings_data = holdings_response.json()
                                 if holdings_data.get("numberOfRecords", 0) > 0:
                                     record = holdings_data["briefRecords"][0]
-                                    return self._parse_book(record)
+                                    book = self._parse_book(record)
+                                    if fetch_holdings:
+                                        book = await self._populate_holdings(book)
+                                    return book
 
                 return None
 
@@ -205,6 +252,8 @@ class WorldCatClient:
         language: Optional[str] = None,
         limit: int = 25,
         offset: int = 1,
+        fetch_holdings: bool = False,
+        holdings_limit: Optional[int] = None,
     ) -> List[WorldCatBook]:
         """Search WorldCat for books by keyword or subject.
 
@@ -215,6 +264,8 @@ class WorldCatClient:
             language: Language filter (e.g., "eng" for English)
             limit: Maximum number of results (1-50)
             offset: Starting position for results (1-based, e.g., 1, 51, 101)
+            fetch_holdings: If True, fetch complete holdings data for each result (slower)
+            holdings_limit: Maximum number of holding institutions to fetch per book. None = fetch all.
 
         Returns:
             List of WorldCatBook objects
@@ -275,20 +326,9 @@ class WorldCatClient:
                         if holdings_data.get("numberOfRecords", 0) > 0:
                             full_record = holdings_data["briefRecords"][0]
 
-                            # Check if our institution holds it
-                            held_by_us = False
-                            try:
-                                inst_check = session.summary_holdings_search(
-                                    oclcNumber=oclc_num, heldBySymbol=self.institution_id
-                                )
-                                if inst_check.status_code == 200:
-                                    inst_data = inst_check.json()
-                                    held_by_us = inst_data.get("numberOfRecords", 0) > 0
-                            except:
-                                pass
-
                             book = self._parse_book(full_record)
-                            book.held_by_institution = held_by_us
+                            if fetch_holdings:
+                                book = await self._populate_holdings(book, limit=holdings_limit)
                             books.append(book)
 
                 return books
@@ -413,9 +453,56 @@ class WorldCatClient:
                 main_titles = title_data.get("mainTitles", [])
                 title = main_titles[0].get("text") if main_titles else None
 
+                # Extract creator/contributors
+                creator = None
+                contributors = []
+                creator_info = data.get("contributor", {})
+                creators_list = creator_info.get("creators", [])
+                if creators_list:
+                    first = creators_list[0]
+                    creator = first.get("name", {}).get("text")
+                    # Build contributors list with roles
+                    for c in creators_list:
+                        name = c.get("name", {}).get("text")
+                        role = c.get("relatorTerm", {}).get("text", "Creator")
+                        if name:
+                            contributors.append({"name": name, "role": role})
+
+                # Extract ISBNs
+                isbns = []
+                identifiers = data.get("identifier", {})
+                isbn_list = identifiers.get("isbns", [])
+                for isbn_entry in isbn_list:
+                    if isinstance(isbn_entry, dict):
+                        isbn_val = isbn_entry.get("isbn")
+                        if isbn_val:
+                            isbns.append(isbn_val)
+                    elif isinstance(isbn_entry, str):
+                        isbns.append(isbn_entry)
+
+                # Extract edition
+                edition_info = data.get("edition", {})
+                edition = edition_info.get("editionStatement") if isinstance(edition_info, dict) else None
+
+                # Extract series
+                series_info = data.get("series", [])
+                series = None
+                if series_info and len(series_info) > 0:
+                    series_name = series_info[0].get("seriesName", {}).get("text")
+                    series_volume = series_info[0].get("seriesVolume")
+                    if series_name:
+                        series = f"{series_name}"
+                        if series_volume:
+                            series += f", {series_volume}"
+
                 return WorldCatFullBib(
                     oclc_number=oclc_number,
                     title=title,
+                    creator=creator,
+                    contributors=contributors,
+                    isbns=isbns,
+                    edition=edition,
+                    series=series,
                     language=item_language,
                     lc_classification=lc_class,
                     dewey_classification=dewey_class,
@@ -428,6 +515,8 @@ class WorldCatClient:
                     publication_place=pub_place,
                     publication_date=pub_date,
                     publication_year=machine_date,
+                    holding_institutions=[],  # Would require separate holdings API call
+                    total_holdings=None,  # Would require separate holdings API call
                 )
 
         except APIError:
@@ -435,16 +524,149 @@ class WorldCatClient:
         except Exception as e:
             raise APIError(f"Full bib lookup error: {str(e)}")
 
+    async def fetch_holdings(self, oclc_number: str, limit: Optional[int] = None) -> Dict[str, Any]:
+        """Fetch all institutions holding an item from WorldCat Discovery API.
+
+        Args:
+            oclc_number: OCLC number to check
+            limit: Maximum number of institutions to fetch. None = fetch all (may be thousands)
+
+        Returns:
+            Dictionary with:
+                - institution_symbols: List of OCLC institution codes
+                - total_holdings: Total number of libraries holding the item
+                - institutions: List of dicts with detailed institution info
+        """
+        try:
+            # Get OAuth token with Discovery API scopes
+            token = WorldcatAccessToken(
+                key=self.client_id,
+                secret=self.client_secret,
+                scopes="wcapi:view_holdings wcapi:view_institution_holdings"
+            )
+
+            # Call Discovery API endpoint
+            url = "https://americas.discovery.api.oclc.org/worldcat/search/v2/bibs-holdings"
+            headers = {
+                "Authorization": f"Bearer {token.token_str}",
+                "Accept": "application/json"
+            }
+
+            # Build params
+            params = {
+                "oclcNumber": oclc_number,
+                "limit": 50  # Max allowed by API
+            }
+
+            all_institutions = []
+            total_holdings_count = 0
+            offset = 1  # API requires offset >= 1
+
+            while True:
+                if offset > 1:  # Only add offset if not first page
+                    params["offset"] = offset
+
+                response = requests.get(url, headers=headers, params=params)
+
+                if response.status_code != 200:
+                    raise APIError(
+                        f"Holdings API request failed",
+                        status_code=response.status_code,
+                    )
+
+                data = response.json()
+
+                # Extract institution symbols from briefHoldings
+                if data.get("numberOfRecords", 0) > 0:
+                    brief_records = data.get("briefRecords", [])
+                    for record in brief_records:
+                        institution_holding = record.get("institutionHolding", {})
+                        total_holdings_count = institution_holding.get("totalHoldingCount", 0)
+                        brief_holdings = institution_holding.get("briefHoldings", [])
+
+                        for holding in brief_holdings:
+                            all_institutions.append({
+                                "symbol": holding.get("oclcSymbol"),
+                                "name": holding.get("institutionName"),
+                                "country": holding.get("country"),
+                                "state": holding.get("state"),
+                                "type": holding.get("institutionType")
+                            })
+
+                # Check if we should continue paginating
+                if len(all_institutions) >= total_holdings_count:
+                    break  # Got all holdings
+
+                if brief_records and len(brief_records[0].get("institutionHolding", {}).get("briefHoldings", [])) < 50:
+                    break  # Last page (fewer than limit)
+
+                # Check user-specified limit
+                if limit and len(all_institutions) >= limit:
+                    break  # Reached user-specified limit
+
+                offset += 50
+
+            # Extract just the symbols for easy use
+            symbols = [inst["symbol"] for inst in all_institutions if inst.get("symbol")]
+
+            return {
+                "institution_symbols": symbols,
+                "total_holdings": total_holdings_count,
+                "institutions": all_institutions,
+            }
+
+        except APIError:
+            raise
+        except Exception as e:
+            raise APIError(f"Holdings lookup error: {str(e)}")
+
+    async def _populate_holdings(self, book: WorldCatBook, limit: Optional[int] = None) -> WorldCatBook:
+        """Populate holdings data for a book.
+
+        Args:
+            book: WorldCatBook to populate holdings for
+            limit: Maximum number of institutions to fetch
+
+        Returns:
+            The same book with holdings data populated
+        """
+        holdings_data = await self.fetch_holdings(book.oclc_number, limit=limit)
+        book.holding_institutions = holdings_data.get("institution_symbols", [])
+        book.total_holdings = holdings_data.get("total_holdings")
+        return book
+
     def _parse_book(self, record: Dict[str, Any]) -> WorldCatBook:
         """Parse a book record from WorldCat API response."""
+        # Extract contributors - may be a single string or list
+        contributors = []
+        if "contributors" in record:
+            contrib = record["contributors"]
+            if isinstance(contrib, list):
+                contributors = contrib
+            elif isinstance(contrib, str):
+                contributors = [contrib]
+
+        # Extract merged OCLC numbers
+        merged_oclc = record.get("mergedOclcNumbers", [])
+        if not isinstance(merged_oclc, list):
+            merged_oclc = []
+
         return WorldCatBook(
             oclc_number=record.get("oclcNumber", ""),
             title=record.get("title", "Untitled"),
             creator=record.get("creator"),
+            contributors=contributors,
             date=record.get("date"),
+            machine_readable_date=record.get("machineReadableDate"),
             publisher=record.get("publisher"),
+            publication_place=record.get("publicationPlace"),
+            edition=record.get("edition"),
+            series=record.get("series"),
             language=record.get("language"),
             format=record.get("generalFormat"),
+            specific_format=record.get("specificFormat"),
             isbns=record.get("isbns", []),
-            held_by_institution=False,
+            holding_institutions=[],  # Populated by _populate_holdings if requested
+            total_holdings=None,  # Populated by _populate_holdings if requested
+            merged_oclc_numbers=merged_oclc,
         )
