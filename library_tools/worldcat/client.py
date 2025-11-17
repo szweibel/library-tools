@@ -640,6 +640,11 @@ class WorldCatClient:
                         error_data = response.json()
                         if "detail" in error_data:
                             error_detail = f": {error_data['detail']}"
+                            # Check if we've exceeded the available holdings (pagination limit reached)
+                            if "Offset must be" in error_data['detail'] and "number of holdings" in error_data['detail']:
+                                # We've fetched all available holdings from the API
+                                # This is not an error - just means we reached the pagination limit
+                                break
                             # For LLM consumers, include the actual error detail
                             if "Unable to translate oclcSymbols" in error_data['detail']:
                                 user_message = f"Invalid institution codes: {error_data['detail']}"
@@ -655,6 +660,9 @@ class WorldCatClient:
                     )
 
                 data = response.json()
+
+                # Track how many institutions we had before this page
+                institutions_before = len(all_institutions)
 
                 # Extract institution symbols from briefHoldings
                 if data.get("numberOfRecords", 0) > 0:
@@ -673,12 +681,13 @@ class WorldCatClient:
                                 "type": holding.get("institutionType")
                             })
 
-                # Check if we should continue paginating
-                if len(all_institutions) >= total_holdings_count:
-                    break  # Got all holdings
+                # Calculate how many institutions we got on this page
+                institutions_this_page = len(all_institutions) - institutions_before
 
-                if brief_records and len(brief_records[0].get("institutionHolding", {}).get("briefHoldings", [])) < 50:
-                    break  # Last page (fewer than limit)
+                # Check if we should continue paginating
+                # Stop if this page had fewer than 50 institutions (last page from API)
+                if institutions_this_page < 50:
+                    break  # Last page - API has no more results
 
                 # Check user-specified limit
                 if limit and len(all_institutions) >= limit:
