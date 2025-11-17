@@ -111,25 +111,17 @@ async def test_total_holdings_consistency():
 
 @pytest.mark.asyncio
 async def test_institution_not_holding():
-    """Test 4: Filter by institution that doesn't have the item."""
-    # Use an unlikely institution code
+    """Test 4: Invalid institution codes return clear error message."""
+    # Use an invalid institution code
     result = await lookup_worldcat_isbn(
         isbn=TEST_ISBN,
         fetch_holdings=True,
         check_institutions=["FAKE123"]
     )
 
-    # Should still have total holdings
-    assert "Total Holdings:" in result
-    total = int(result.split("Total Holdings:")[1].split()[0])
-    assert total > 0, "Should still report global total holdings"
-
-    # But shouldn't have any institutions listed, or the available line shouldn't appear
-    if "Available at:" in result:
-        inst_str = result.split("Available at:")[1].split("\n")[0].strip()
-        # Should be empty or just have FAKE123 if it somehow exists
-        if inst_str:
-            assert "FAKE123" in inst_str
+    # Should return an error message about invalid codes
+    assert "Invalid institution codes" in result or "Unable to translate" in result
+    assert "FAKE123" in result, "Error should mention the invalid code"
 
 
 @pytest.mark.asyncio

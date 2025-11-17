@@ -160,7 +160,7 @@ class WorldCatClient:
                         if data.get("numberOfRecords", 0) > 0:
                             record = data["briefRecords"][0]
                             book = self._parse_book(record)
-                            if fetch_holdings:
+                            if fetch_holdings or check_institutions:
                                 book = await self._populate_holdings(
                                     book,
                                     limit=holdings_limit,
@@ -193,8 +193,12 @@ class WorldCatClient:
                                 if holdings_data.get("numberOfRecords", 0) > 0:
                                     record = holdings_data["briefRecords"][0]
                                     book = self._parse_book(record)
-                                    if fetch_holdings:
-                                        book = await self._populate_holdings(book)
+                                    if fetch_holdings or check_institutions:
+                                        book = await self._populate_holdings(
+                                            book,
+                                            limit=holdings_limit,
+                                            check_institutions=check_institutions
+                                        )
                                     return book
 
                 # Strategy 3: Search by title and author
@@ -241,14 +245,21 @@ class WorldCatClient:
                                 if holdings_data.get("numberOfRecords", 0) > 0:
                                     record = holdings_data["briefRecords"][0]
                                     book = self._parse_book(record)
-                                    if fetch_holdings:
-                                        book = await self._populate_holdings(book)
+                                    if fetch_holdings or check_institutions:
+                                        book = await self._populate_holdings(
+                                            book,
+                                            limit=holdings_limit,
+                                            check_institutions=check_institutions
+                                        )
                                     return book
 
                 return None
 
         except ValidationError:
             # Re-raise validation errors without wrapping
+            raise
+        except APIError:
+            # Re-raise API errors without wrapping (preserves user_message)
             raise
         except Exception as e:
             raise APIError(f"WorldCat lookup error: {str(e)}")
@@ -338,7 +349,7 @@ class WorldCatClient:
                             full_record = holdings_data["briefRecords"][0]
 
                             book = self._parse_book(full_record)
-                            if fetch_holdings:
+                            if fetch_holdings or check_institutions:
                                 book = await self._populate_holdings(
                                     book,
                                     limit=holdings_limit,
@@ -622,18 +633,25 @@ class WorldCatClient:
                 response = requests.get(url, headers=headers, params=params)
 
                 if response.status_code != 200:
-                    # If we're filtering by institutions and get an error, it might be invalid codes
-                    # Return empty holdings but keep the global total
-                    if check_institutions and len(check_institutions) > 0:
-                        return {
-                            "institution_symbols": [],
-                            "total_holdings": global_total_holdings,
-                            "institutions": [],
-                        }
-                    # Otherwise, raise the error
+                    # Extract error detail from API response if available
+                    error_detail = ""
+                    user_message = None
+                    try:
+                        error_data = response.json()
+                        if "detail" in error_data:
+                            error_detail = f": {error_data['detail']}"
+                            # For LLM consumers, include the actual error detail
+                            if "Unable to translate oclcSymbols" in error_data['detail']:
+                                user_message = f"Invalid institution codes: {error_data['detail']}"
+                        elif "title" in error_data:
+                            error_detail = f": {error_data['title']}"
+                    except:
+                        pass
+
                     raise APIError(
-                        f"Holdings API request failed",
+                        f"Holdings API request failed{error_detail}",
                         status_code=response.status_code,
+                        user_message=user_message
                     )
 
                 data = response.json()
