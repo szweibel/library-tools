@@ -13,7 +13,7 @@ except ImportError:
     )
 
 from library_tools.common.config import get_settings
-from library_tools.common.errors import APIError, ConfigurationError
+from library_tools.common.errors import APIError, ConfigurationError, ValidationError
 
 
 class WorldCatBook(BaseModel):
@@ -127,6 +127,7 @@ class WorldCatClient:
         isbn: Optional[str] = None,
         fetch_holdings: bool = False,
         holdings_limit: Optional[int] = None,
+        check_institutions: Optional[List[str]] = None,
     ) -> Optional[WorldCatBook]:
         """Look up a book in WorldCat and return bibliographic data.
 
@@ -140,6 +141,7 @@ class WorldCatClient:
             isbn: ISBN to verify/enrich
             fetch_holdings: If True, fetch complete holdings data (slower, makes additional API call)
             holdings_limit: Maximum number of holding institutions to fetch. None = fetch all.
+            check_institutions: Optional list of institution codes to check. Only returns holdings for these institutions.
 
         Returns:
             WorldCatBook object or None if not found
@@ -159,7 +161,11 @@ class WorldCatClient:
                             record = data["briefRecords"][0]
                             book = self._parse_book(record)
                             if fetch_holdings:
-                                book = await self._populate_holdings(book, limit=holdings_limit)
+                                book = await self._populate_holdings(
+                                    book,
+                                    limit=holdings_limit,
+                                    check_institutions=check_institutions
+                                )
                             return book
 
                 # Strategy 2: Search by DOI
@@ -241,6 +247,9 @@ class WorldCatClient:
 
                 return None
 
+        except ValidationError:
+            # Re-raise validation errors without wrapping
+            raise
         except Exception as e:
             raise APIError(f"WorldCat lookup error: {str(e)}")
 
@@ -254,6 +263,7 @@ class WorldCatClient:
         offset: int = 1,
         fetch_holdings: bool = False,
         holdings_limit: Optional[int] = None,
+        check_institutions: Optional[List[str]] = None,
     ) -> List[WorldCatBook]:
         """Search WorldCat for books by keyword or subject.
 
@@ -266,6 +276,7 @@ class WorldCatClient:
             offset: Starting position for results (1-based, e.g., 1, 51, 101)
             fetch_holdings: If True, fetch complete holdings data for each result (slower)
             holdings_limit: Maximum number of holding institutions to fetch per book. None = fetch all.
+            check_institutions: Optional list of institution codes to check. Only returns holdings for these institutions.
 
         Returns:
             List of WorldCatBook objects
@@ -328,11 +339,18 @@ class WorldCatClient:
 
                             book = self._parse_book(full_record)
                             if fetch_holdings:
-                                book = await self._populate_holdings(book, limit=holdings_limit)
+                                book = await self._populate_holdings(
+                                    book,
+                                    limit=holdings_limit,
+                                    check_institutions=check_institutions
+                                )
                             books.append(book)
 
                 return books
 
+        except ValidationError:
+            # Re-raise validation errors without wrapping
+            raise
         except APIError:
             raise
         except Exception as e:
@@ -524,19 +542,34 @@ class WorldCatClient:
         except Exception as e:
             raise APIError(f"Full bib lookup error: {str(e)}")
 
-    async def fetch_holdings(self, oclc_number: str, limit: Optional[int] = None) -> Dict[str, Any]:
+    async def fetch_holdings(
+        self,
+        oclc_number: str,
+        limit: Optional[int] = None,
+        check_institutions: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
         """Fetch all institutions holding an item from WorldCat Discovery API.
 
         Args:
             oclc_number: OCLC number to check
             limit: Maximum number of institutions to fetch. None = fetch all (may be thousands)
+            check_institutions: Optional list of institution codes to filter by. Only checks if these specific institutions hold the item.
 
         Returns:
             Dictionary with:
                 - institution_symbols: List of OCLC institution codes
-                - total_holdings: Total number of libraries holding the item
+                - total_holdings: Total number of libraries holding the item (global count, not filtered)
                 - institutions: List of dicts with detailed institution info
+
+        Raises:
+            ValidationError: If check_institutions is an empty list
         """
+        # Validate check_institutions
+        if check_institutions is not None and len(check_institutions) == 0:
+            raise ValidationError(
+                "check_institutions cannot be empty. Use None to fetch all holdings or provide at least one institution code."
+            )
+
         try:
             # Get OAuth token with Discovery API scopes
             token = WorldcatAccessToken(
@@ -552,14 +585,34 @@ class WorldCatClient:
                 "Accept": "application/json"
             }
 
-            # Build params
+            # First, get global total holdings count (without filter)
+            # This ensures we always report the true worldwide count
+            global_total_holdings = 0
+            initial_params = {
+                "oclcNumber": oclc_number,
+                "limit": 1  # We only need the count
+            }
+            initial_response = requests.get(url, headers=headers, params=initial_params)
+            if initial_response.status_code == 200:
+                initial_data = initial_response.json()
+                if initial_data.get("numberOfRecords", 0) > 0:
+                    brief_records = initial_data.get("briefRecords", [])
+                    if brief_records:
+                        institution_holding = brief_records[0].get("institutionHolding", {})
+                        global_total_holdings = institution_holding.get("totalHoldingCount", 0)
+
+            # Build params for actual holdings fetch
             params = {
                 "oclcNumber": oclc_number,
                 "limit": 50  # Max allowed by API
             }
 
+            # Add institution filter if provided (and not empty)
+            if check_institutions and len(check_institutions) > 0:
+                params["heldBySymbol"] = check_institutions
+
             all_institutions = []
-            total_holdings_count = 0
+            total_holdings_count = global_total_holdings  # Use global count
             offset = 1  # API requires offset >= 1
 
             while True:
@@ -569,6 +622,15 @@ class WorldCatClient:
                 response = requests.get(url, headers=headers, params=params)
 
                 if response.status_code != 200:
+                    # If we're filtering by institutions and get an error, it might be invalid codes
+                    # Return empty holdings but keep the global total
+                    if check_institutions and len(check_institutions) > 0:
+                        return {
+                            "institution_symbols": [],
+                            "total_holdings": global_total_holdings,
+                            "institutions": [],
+                        }
+                    # Otherwise, raise the error
                     raise APIError(
                         f"Holdings API request failed",
                         status_code=response.status_code,
@@ -581,7 +643,7 @@ class WorldCatClient:
                     brief_records = data.get("briefRecords", [])
                     for record in brief_records:
                         institution_holding = record.get("institutionHolding", {})
-                        total_holdings_count = institution_holding.get("totalHoldingCount", 0)
+                        # Don't overwrite global total_holdings_count (it may be filtered count)
                         brief_holdings = institution_holding.get("briefHoldings", [])
 
                         for holding in brief_holdings:
@@ -620,17 +682,27 @@ class WorldCatClient:
         except Exception as e:
             raise APIError(f"Holdings lookup error: {str(e)}")
 
-    async def _populate_holdings(self, book: WorldCatBook, limit: Optional[int] = None) -> WorldCatBook:
+    async def _populate_holdings(
+        self,
+        book: WorldCatBook,
+        limit: Optional[int] = None,
+        check_institutions: Optional[List[str]] = None
+    ) -> WorldCatBook:
         """Populate holdings data for a book.
 
         Args:
             book: WorldCatBook to populate holdings for
             limit: Maximum number of institutions to fetch
+            check_institutions: Optional list of institution codes to filter by
 
         Returns:
             The same book with holdings data populated
         """
-        holdings_data = await self.fetch_holdings(book.oclc_number, limit=limit)
+        holdings_data = await self.fetch_holdings(
+            book.oclc_number,
+            limit=limit,
+            check_institutions=check_institutions
+        )
         book.holding_institutions = holdings_data.get("institution_symbols", [])
         book.total_holdings = holdings_data.get("total_holdings")
         return book

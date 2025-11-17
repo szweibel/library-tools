@@ -152,7 +152,8 @@ await lookup_worldcat_isbn(
     year_to: int | None = None,
     isbn: str | None = None,
     fetch_holdings: bool = False,
-    holdings_limit: int | None = None
+    holdings_limit: int | None = None,
+    check_institutions: list | None = None
 ) -> str
 
 await search_worldcat_books(
@@ -163,7 +164,8 @@ await search_worldcat_books(
     limit: int = 25,
     offset: int = 1,
     fetch_holdings: bool = False,
-    holdings_limit: int | None = None
+    holdings_limit: int | None = None,
+    check_institutions: list | None = None
 ) -> str
 
 await get_worldcat_classification(
@@ -178,6 +180,7 @@ await get_worldcat_full_record(
 **Holdings Data:**
 - Set `fetch_holdings=True` to get detailed institutional holdings information
 - Use `holdings_limit` to control how many institutions to fetch (None = all)
+- Use `check_institutions` to filter by specific institution codes (e.g., `["NYP", "DLC"]`)
 - Returns institution codes, total holdings count, and availability details
 
 ```python
@@ -192,6 +195,13 @@ result = await search_worldcat_books(
     query="climate change",
     fetch_holdings=True,
     holdings_limit=100
+)
+
+# Check if specific institutions hold the item
+result = await lookup_worldcat_isbn(
+    isbn="9780451524935",
+    fetch_holdings=True,
+    check_institutions=["NYP", "DLC", "HUH"]  # New York Public, Library of Congress, Harvard
 )
 ```
 

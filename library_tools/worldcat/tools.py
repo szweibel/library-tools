@@ -141,6 +141,7 @@ async def lookup_worldcat_isbn(
     isbn: Optional[str] = None,
     fetch_holdings: bool = False,
     holdings_limit: Optional[int] = None,
+    check_institutions: Optional[list] = None,
 ) -> str:
     """Look up a book in WorldCat and return ISBN(s) and bibliographic data.
 
@@ -157,6 +158,7 @@ async def lookup_worldcat_isbn(
         isbn: ISBN to verify/enrich with all variants (ISBN-10, ISBN-13, etc.)
         fetch_holdings: If True, fetch complete holdings data (which institutions hold the item). Slower but provides comprehensive availability information.
         holdings_limit: Maximum number of holding institutions to fetch. None = fetch all (may be thousands).
+        check_institutions: Optional list of institution codes (e.g., ["NYP", "DLC"]) to check. Only returns holdings for these specific institutions. Faster than fetching all.
 
     Returns:
         Formatted string with book details including all ISBNs and OCLC number
@@ -191,6 +193,7 @@ async def lookup_worldcat_isbn(
             isbn=isbn,
             fetch_holdings=fetch_holdings,
             holdings_limit=holdings_limit,
+            check_institutions=check_institutions,
         )
 
         if not book:
@@ -230,6 +233,7 @@ async def search_worldcat_books(
     offset: int = 1,
     fetch_holdings: bool = False,
     holdings_limit: Optional[int] = None,
+    check_institutions: Optional[list] = None,
 ) -> str:
     """Search WorldCat for books by keyword or subject.
 
@@ -245,6 +249,7 @@ async def search_worldcat_books(
         offset: Starting position for results (1-based, default 1)
         fetch_holdings: If True, fetch complete holdings data for each result (which institutions hold each item). Slower but provides comprehensive availability information.
         holdings_limit: Maximum number of holding institutions to fetch per book. None = fetch all (may be thousands).
+        check_institutions: Optional list of institution codes (e.g., ["NYP", "DLC"]) to check. Only returns holdings for these specific institutions. Faster than fetching all.
 
     Returns:
         Formatted string with search results including ISBNs, OCLC numbers, and holdings info
@@ -277,6 +282,7 @@ async def search_worldcat_books(
             offset=offset,
             fetch_holdings=fetch_holdings,
             holdings_limit=holdings_limit,
+            check_institutions=check_institutions,
         )
 
         return _format_books_for_llm(books, query)
